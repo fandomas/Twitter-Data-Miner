@@ -13,6 +13,6 @@ You can choose how many nodes to fetch until stop
 
 Also you can Save the Graph to a networkx-based text file and draw the Graph using matplotlib.pyplot
 
-When the application reach the maximum limit (for all keys given) it finds the unix timestamp, and sleep until its time to wake up and communicate again to fetch the rest.
+When the application reach the maximum limit (for all given keys) it finds the unix timestamp, and sleep until its time to wake up and communicate again to fetch the rest.
 
 Dont forget to say thanks.
