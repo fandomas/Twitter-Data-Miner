@@ -1,8 +1,10 @@
 # Twitter-Data-Miner
-A twitter friendship data miner - Connects with api (oauth) and make a networkx-based Directed graph, draw, and then saves the graph
+A twitter friendship data miner - Connects with api (oauth) and make a networkx-based Directed graph, draw, and then saves the graph to a text file.
 
-Required
-networkx
+Written in python but:
+Required: 
+
+networkx,
 matplotlib
 
 Tested on linux
