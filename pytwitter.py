@@ -36,9 +36,9 @@ def getAccessToken(consumer_key, consumer_secret):
 
 def getToken(i):
 	#user n different applications - get things faster
-	token=[getAccessToken("hN59d0y0g3rGUiJ957bZrrUEG","zTA6E2dHBJqtYFalXbqJ5BkrZ1vEs5YKseOeNt9sYLx2HvTKZZ"),	#twisna
-	getAccessToken("ZRQNjjhKtk2N1J4VpMAu1rLv9","7srA5K2S7UcpOVSPW2uptvKooDHiqJBNABcpp8cn1U5AJFpAdy"),	#twitrenda
-	getAccessToken("79fK73f9y5wM5pep0teL7Wfgq","JvfUPCLrXPFLgv9SADIGMwZlt17JWqUNbr2gBf2p1Sw7nbKRnH")]	#Academic Research SNA
+	token=[getAccessToken("k1","s1"),	#twisna
+	getAccessToken("k2","s2"),	#twitrenda
+	getAccessToken("k3","s3")]	#Academic Research SNA
 	return token[i-1]
 
 def getSimpleAPIRequest(get):
