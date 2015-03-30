@@ -1,6 +1,4 @@
 """
-The MIT License (MIT)
-
 Copyright (c) 2015 Theodoros Danos
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -30,13 +28,11 @@ import time
 import operator
 
 curr_tid=[1]		#we start with token num 1
-max_tid=3		#we have 3 tokens
+max_tid=4		#we have 3 tokens
 atoken=[getToken(curr_tid[0])]
 
 startid="114524006"
 
-#take first followers more seriously (download first followers of first user) than the rest following
-globalnum=10
 
 start_time = time.time()
 
@@ -48,25 +44,34 @@ limits_dict['followers_limit']=[limits['resources']['followers']['/followers/ids
 limits_dict['following_limit']=[limits['resources']['friends']['/friends/ids']['remaining'],long(limits['resources']['friends']['/friends/ids']['reset']),'/friends/ids']
 limits_dict['userinfo_limit']= [limits['resources']['users']['/users/show/:id']['remaining'],long(limits['resources']['users']['/users/show/:id']['reset']),'/users/show']
 
-users={startid:time.time()}
+users={1:[startid]}
+usersUnique={startid:True}
 visited={}
 restrictedUsers={}
 specificUsers=[]
 
+globalcurr=1
+
 #how many users to fetch until stop
-stopat=50
+stopat=70
 
 
 try:
 	while stopat>0:
-		sorted_k = sorted(users.items(), key=operator.itemgetter(1))
-		DiscoveryPool=[]
-		for i, j in sorted_k: DiscoveryPool.append(i)
+		globalcurr+=1
+		firstKey=sorted(users.keys())[0]
 		
-		if len(DiscoveryPool)==0:
+		if len(users)==0:
+			print "No more users"
 			break
 		else:
-			userid=DiscoveryPool[0]
+			DiscoveryPool=users[firstKey]
+			if len(DiscoveryPool)==0:
+				globalcurr-=1
+				del users[firstKey]
+				continue
+			else:
+				userid=users[firstKey][0]
 		try:
 			print "Finding Followers of ",userid
 			ufollowers= getAPIRequest("/1.1/followers/ids.json?user_id="+userid+"&count=5000", limits_dict, 'followers_limit', 'followers')
@@ -79,7 +84,8 @@ try:
 		except urllib2.HTTPError, err:
 			print "Skipping... Restriction for user ",userid, " (or possible error) - ERR:"+str(err.code) #user accnt is not public
 			visited[long(userid)]={}
-			del users[userid]
+			del users[firstKey][0]
+			usersUnique[userid]=True
 			#decrease limit - catch occured	- we decrease all beacause we didn't noted the function caused it
 			limits_dict['followers_limit'][0]-=1
 			limits_dict['following_limit'][0]-=1
@@ -91,22 +97,34 @@ try:
 		uid=uinfo['id']
 		
 		visited[uid]={'followers':ufollowers['ids'], 'following':ufollowing['ids'], 'name':uname, 'uscrname':uscrname, 'uid':uid}
-		del users[str(uid)]
+		del users[firstKey][0]
+		usersUnique[userid]=True
 		
-		userspectime=time.time()-globalnum*2
+		user_pool_followers=[]
+		user_pool_following=[]
+		
 		#add followers to new users if they are not fetched yet
 		for kid in ufollowers['ids']:
 			if visited.has_key(kid)==False:
-				users[str(kid)]=userspectime
-				
+				if usersUnique.has_key(str(kid))==False:
+					user_pool_followers.append(str(kid))
+					usersUnique[str(kid)]=True
+		
 		#add followers users to new users if they are not fetched yet
 		for kid in ufollowing['ids']:
 			if visited.has_key(kid)==False:
-				users[str(kid)]=userspectime*1.5
+				if usersUnique.has_key(str(kid))==False:
+					user_pool_following.append(str(kid))
+					usersUnique[str(kid)]=True
+					
 		
-		globalnum=1
+		if len(user_pool_followers)>0: 
+			users[globalcurr]=user_pool_followers
+			globalcurr+=1
+		if len(user_pool_following)>0: users[globalcurr]=user_pool_following
 		
 		stopat-=1
+		
 		
 except KeyboardInterrupt:
 	print "Interrupted..."
@@ -119,5 +137,5 @@ print "Started before: ", elapsed_time, "Seconds"
 #FullGraph()
 
 #make connections from only fetched nodes
-G=partialGraph(True)
+G=partialGraph(draw=True, snodes=600)
 
