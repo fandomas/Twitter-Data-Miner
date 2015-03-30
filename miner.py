@@ -27,12 +27,11 @@ import matplotlib.pyplot as plt
 import time
 import operator
 
-curr_tid=[1]		#we start with token num 1
-max_tid=4		#we have 3 tokens
+curr_tid=[3]		#we start with token # n
+max_tid=5			#we have m tokens
 atoken=[getToken(curr_tid[0])]
 
 startid="114524006"
-
 
 start_time = time.time()
 
@@ -48,16 +47,20 @@ users={1:[startid]}
 usersUnique={startid:True}
 visited={}
 restrictedUsers={}
-specificUsers=[]
+
 
 globalcurr=1
 
 #how many users to fetch until stop
-stopat=70
+stopat=170
 
+#STOP LEVEL
+#remember, the level one its the starting user
+#e.g. level=3 its the starting user, and its followers and following list
+stoplevel=3
 
 try:
-	while stopat>0:
+	while stopat>0 and stoplevel>0:
 		globalcurr+=1
 		firstKey=sorted(users.keys())[0]
 		
@@ -69,6 +72,7 @@ try:
 			if len(DiscoveryPool)==0:
 				globalcurr-=1
 				del users[firstKey]
+				stoplevel-=1
 				continue
 			else:
 				userid=users[firstKey][0]
@@ -95,6 +99,8 @@ try:
 		uname=uinfo['name'].replace(" ", "_")	#concacenate for networkx
 		uscrname=uinfo['screen_name']
 		uid=uinfo['id']
+		
+		print "Fetched: ",uname
 		
 		visited[uid]={'followers':ufollowers['ids'], 'following':ufollowing['ids'], 'name':uname, 'uscrname':uscrname, 'uid':uid}
 		del users[firstKey][0]
