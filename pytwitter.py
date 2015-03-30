@@ -34,10 +34,11 @@ def getAccessToken(consumer_key, consumer_secret):
 
 def getToken(i):
 	#user n different applications - get things faster
-	token=[getAccessToken("k1","s1"),	#
-	getAccessToken("k2","s2"),	#
-	getAccessToken("k3","s3"),	#  
-	getAccessToken("k4","s4")]	#
+	token=[getAccessToken("hN59d0y0g3rGUiJ957bZrrUEG","zTA6E2dHBJqtYFalXbqJ5BkrZ1vEs5YKseOeNt9sYLx2HvTKZZ"),	#twisna
+	getAccessToken("ZRQNjjhKtk2N1J4VpMAu1rLv9","7srA5K2S7UcpOVSPW2uptvKooDHiqJBNABcpp8cn1U5AJFpAdy"),	#twitrenda
+	getAccessToken("79fK73f9y5wM5pep0teL7Wfgq","JvfUPCLrXPFLgv9SADIGMwZlt17JWqUNbr2gBf2p1Sw7nbKRnH"),	#Academic Research SNA
+	getAccessToken("w2BBOWamUqd9MfFrhLPxmWj4q","ZUB7OVrRuVDkceBkhsKFbg4hAMSp5Z4bpENVN9sbC22vAnSeLj"),	#hackevents
+	getAccessToken("GAhHCrimC7PjahhVOCxByUVzQ","z9RCW0XakaFRXKAgnbZZWRFq5bX95pqlp7Oc62j0ifexr6CfcJ")]	#hackevents-prometheus
 	return token[i-1]
 
 def getSimpleAPIRequest(get):
@@ -138,7 +139,7 @@ def FullGraph(draw=False, save=True):
 		plt.show()
 	return G
 
-def partialGraph(draw=False, save=True):
+def partialGraph(draw=False, save=True, snodes=300):
 	G = nx.DiGraph()
 	print "Calculating Partial Graph..."
 	for userid in visited.keys():
@@ -164,7 +165,10 @@ def partialGraph(draw=False, save=True):
 		nx.write_adjlist(G,"Partial_undirected_twitter.txt")
 	
 	if draw==True:
-		nx.draw_networkx(G)
+		if snodes != 300:
+			nx.draw_networkx(G,node_size=snodes)
+		else:
+			nx.draw_networkx(G)
 		plt.show()
 	return G
 
@@ -178,3 +182,7 @@ def getOnlyLimits():
 			rem=l['resources'][k][sk]['remaining']
 			lim=l['resources'][k][sk]['limit']
 			if rem<lim: print l['resources'][k][sk], sk
+
+def readDiGraph(pfile):
+	G=nx.read_adjlist(pfile,create_using=nx.DiGraph())
+	return G
