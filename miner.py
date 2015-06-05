@@ -1,25 +1,3 @@
-"""
-Copyright (c) 2015 Theodoros Danos
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-"""
-
 
 execfile('pytwitter.py')
 import networkx as nx
@@ -27,11 +5,16 @@ import matplotlib.pyplot as plt
 import time
 import operator
 
-curr_tid=[3]		#we start with token # n
+alltokens=get_All_tokens()
+
+curr_tid=[1]		#we start with token # n
 max_tid=5			#we have m tokens
 atoken=[getToken(curr_tid[0])]
 
-startid="114524006"
+
+
+#getOnlyLimits()
+#exit()
 
 start_time = time.time()
 
@@ -43,6 +26,23 @@ limits_dict['followers_limit']=[limits['resources']['followers']['/followers/ids
 limits_dict['following_limit']=[limits['resources']['friends']['/friends/ids']['remaining'],long(limits['resources']['friends']['/friends/ids']['reset']),'/friends/ids']
 limits_dict['userinfo_limit']= [limits['resources']['users']['/users/show/:id']['remaining'],long(limits['resources']['users']['/users/show/:id']['reset']),'/users/show']
 
+print limits_dict
+
+
+try:
+	userstart_name=raw_input("Give Username to start (case sensitive):")
+	print "Fetch user info", userstart_name
+	uinfo=getAPIRequest("/1.1/users/show.json?screen_name="+userstart_name+"&count=5000", limits_dict, 'userinfo_limit', 'users')
+	startid=str(uinfo['id'])
+	
+except urllib2.HTTPError, err:
+	print "Error fetching user", userstart_name
+	exit()
+
+
+#manually start with user id
+#startid="114524006"
+
 users={1:[startid]}
 usersUnique={startid:True}
 visited={}
@@ -52,17 +52,26 @@ restrictedUsers={}
 globalcurr=1
 
 #how many users to fetch until stop
-stopat=170
+stopat=75
 
 #STOP LEVEL
-#remember, the level one its the starting user
-#e.g. level=3 its the starting user, and its followers and following list
+#remember, the level 3 its the starting user
+#after that, the level is count as 2
+#eg. 5= scan the ego network of the START user, and next scans the followers and following users of the START user
 stoplevel=3
+
+#limit how many followers or 'follow users' to keep for each user (eg. if someone has 1000, we only save (for scan later) a small number of them
+keep_users=5000
 
 try:
 	while stopat>0 and stoplevel>0:
 		globalcurr+=1
-		firstKey=sorted(users.keys())[0]
+		
+		try:
+			firstKey=sorted(users.keys())[0]
+		except IndexError:
+			print "ERROR OCCURED [RESTRECTION ON USER ACCOUNT] OR [TWITTER BLOCKED YOUR REQUEST] - "
+			break
 		
 		if len(users)==0:
 			print "No more users"
@@ -70,8 +79,9 @@ try:
 		else:
 			DiscoveryPool=users[firstKey]
 			if len(DiscoveryPool)==0:
-				globalcurr-=1
+				globalcurr-=3	#followers and following of the previous +1 in the start of the loop
 				del users[firstKey]
+				globalcurr+=2	#reset global current counter (only followers and following, we do not add the start value because it will be added in the beginning)
 				stoplevel-=1
 				continue
 			else:
@@ -86,10 +96,18 @@ try:
 			print "Fetch user info", userid
 			uinfo=getAPIRequest("/1.1/users/show.json?user_id="+userid+"&count=5000", limits_dict, 'userinfo_limit', 'users')
 		except urllib2.HTTPError, err:
-			print "Skipping... Restriction for user ",userid, " (or possible error) - ERR:"+str(err.code) #user accnt is not public
+			if err.code == 429:
+				print "Twitter problem!! 429 Error"
+				break
+			
+			print "Skipping... Restriction for user ",userid, " - ERR:"+str(err.code),err.read() #user accnt is not public
+			
 			visited[long(userid)]={}
 			del users[firstKey][0]
 			usersUnique[userid]=True
+			
+			globalcurr-=1
+			
 			#decrease limit - catch occured	- we decrease all beacause we didn't noted the function caused it
 			limits_dict['followers_limit'][0]-=1
 			limits_dict['following_limit'][0]-=1
@@ -110,24 +128,33 @@ try:
 		user_pool_following=[]
 		
 		#add followers to new users if they are not fetched yet
+		count_followers=0
 		for kid in ufollowers['ids']:
 			if visited.has_key(kid)==False:
 				if usersUnique.has_key(str(kid))==False:
-					user_pool_followers.append(str(kid))
-					usersUnique[str(kid)]=True
+					if count_followers<=keep_users:
+						count_followers+=1
+						user_pool_followers.append(str(kid))
+						usersUnique[str(kid)]=True
+					else:
+						break
 		
 		#add followers users to new users if they are not fetched yet
+		count_follow=0
 		for kid in ufollowing['ids']:
 			if visited.has_key(kid)==False:
 				if usersUnique.has_key(str(kid))==False:
-					user_pool_following.append(str(kid))
-					usersUnique[str(kid)]=True
+					if count_follow<=keep_users:
+						count_follow+=1
+						user_pool_following.append(str(kid))
+						usersUnique[str(kid)]=True
+					else:
+						break
 					
 		
-		if len(user_pool_followers)>0: 
-			users[globalcurr]=user_pool_followers
-			globalcurr+=1
-		if len(user_pool_following)>0: users[globalcurr]=user_pool_following
+		users[globalcurr]=user_pool_followers
+		globalcurr+=1
+		users[globalcurr]=user_pool_following
 		
 		stopat-=1
 		
