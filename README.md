@@ -1,4 +1,7 @@
 # Twitter-Data-Miner
+![Alt text](http://cutportal.com/css/images/myclas.png?raw=true "Optional Title")
+
+
 A twitter friendship data miner - Connects with api (oauth) and make a networkx-based Directed graph, draw, and then saves the graph to a text file.
 
 Written in python but:
