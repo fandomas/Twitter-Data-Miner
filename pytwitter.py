@@ -1,26 +1,14 @@
-"""
-Copyright (c) 2015 Theodoros Danos
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-"""
 
 import urllib, urllib2, base64, json
+starter_user_infoisfetched=True
+
+def get_All_tokens():
+	return [getAccessToken("hN59d0y0g3rGUiJ957bZrrUEG","zTA6E2dHBJqtYFalXbqJ5BkrZ1vEs5YKseOeNt9sYLx2HvTKZZ"),	#twisna
+	getAccessToken("ZRQNjjhKtk2N1J4VpMAu1rLv9","7srA5K2S7UcpOVSPW2uptvKooDHiqJBNABcpp8cn1U5AJFpAdy"),	#twitrenda
+	getAccessToken("79fK73f9y5wM5pep0teL7Wfgq","JvfUPCLrXPFLgv9SADIGMwZlt17JWqUNbr2gBf2p1Sw7nbKRnH"),	#Academic Research SNA
+	getAccessToken("w2BBOWamUqd9MfFrhLPxmWj4q","ZUB7OVrRuVDkceBkhsKFbg4hAMSp5Z4bpENVN9sbC22vAnSeLj"),	#hackevents
+	getAccessToken("GAhHCrimC7PjahhVOCxByUVzQ","z9RCW0XakaFRXKAgnbZZWRFq5bX95pqlp7Oc62j0ifexr6CfcJ")]
 
 def getAccessToken(consumer_key, consumer_secret):
 	data = urllib.urlencode({'grant_type': 'client_credentials'})
@@ -33,13 +21,9 @@ def getAccessToken(consumer_key, consumer_secret):
 	return json.loads(content)['access_token']
 
 def getToken(i):
+	global alltokens
 	#user n different applications - get things faster
-	token=[getAccessToken("k1","s1"),	#app1
-	getAccessToken("k2","s2"),	#app2
-	getAccessToken("k3","s3"),	#app3
-	getAccessToken("k4","s4"),	#app4
-	getAccessToken("k5","s5")]	#app5
-	return token[i-1]
+	return alltokens[i-1]
 
 def getSimpleAPIRequest(get):
 	request = urllib2.Request("https://api.twitter.com"+get)
@@ -62,6 +46,10 @@ def getAPIRequest(get, limitDict, funcKey, categKey):
 	
 	print "currid="+str(curr_tid[0]), "limit="+str(limitMutable)
 	
+	print 
+	print limitMutable
+	print
+	
 	if timenow-timetoreset <= 0 and limitMutable[0]==0:
 		if curr_tid[0]>=max_tid:
 			curr_tid[0]=1
@@ -73,7 +61,7 @@ def getAPIRequest(get, limitDict, funcKey, categKey):
 			timenow=int(time.time())
 			
 			secs_sleep=timetoreset-timenow
-			if timenow-timetoreset <= 0 and limitMutable[0]==0:
+			if timenow-timetoreset <= 0 and limitMutable[0]==0:		
 				if secs_sleep>0:
 					print "Sleeping for limit. Sleeping for",secs_sleep,"seconds...", get, "TID:"+str(curr_tid[0])
 					time.sleep(secs_sleep+2)
@@ -108,6 +96,11 @@ def reset_limits(limits, limitDict):
 	limitDict['followers_limit']=[limits['resources']['followers']['/followers/ids']['remaining'], long(limits['resources']['followers']['/followers/ids']['reset']),'/followers/ids']
 	limitDict['following_limit']=[limits['resources']['friends']['/friends/ids']['remaining'],long(limits['resources']['friends']['/friends/ids']['reset']),'/friends/ids']
 	limitDict['userinfo_limit']=[limits['resources']['users']['/users/show/:id']['remaining'],long(limits['resources']['users']['/users/show/:id']['reset']),'/users/show']
+
+def zero_limits(limits, limitDict):
+	limitDict['followers_limit']=[0, long(limits['resources']['followers']['/followers/ids']['reset']),'/followers/ids']
+	limitDict['following_limit']=[0,long(limits['resources']['friends']['/friends/ids']['reset']),'/friends/ids']
+	limitDict['userinfo_limit']= [0,long(limits['resources']['users']['/users/show/:id']['reset']),'/users/show']
 
 def FullGraph(draw=False, save=True):
 	G = nx.DiGraph()
